@@ -80,6 +80,8 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Credentials are not valid (password)');
 
+    delete user.password;
+
     const tokens = await this.getJwtToken({ id: user.id });
 
     await this.updateRefreshToken(user.id, tokens.refreshToken);

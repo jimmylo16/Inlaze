@@ -19,7 +19,7 @@ export class Post extends BaseEntity implements PostModel {
   readonly content: string;
 
   @ApiProperty()
-  @Column('text')
+  @Column('text', { default: 0 })
   readonly likes: number;
 
   @ApiProperty({ type: () => User })

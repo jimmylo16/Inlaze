@@ -15,6 +15,7 @@ async function bootstrap() {
     .setTitle('Helix Medical Info')
     .setDescription('The Medical Info api')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

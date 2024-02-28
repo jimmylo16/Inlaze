@@ -17,7 +17,7 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'))
-@ApiTags('Posts')
+@ApiTags('Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
