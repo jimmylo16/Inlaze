@@ -15,6 +15,7 @@ import { LoginUserDto, CreateUserDto } from './dto';
 import { User } from '../users/entities/user.entity';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { ConfigService } from '@nestjs/config';
+import { MailService } from '../mails/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -25,15 +26,29 @@ export class AuthService {
     private readonly jwtService: JwtService,
 
     private configService: ConfigService,
+
+    private readonly mailService: MailService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    try {
-      const { password, ...userData } = createUserDto;
+  async register(createUserDto: CreateUserDto) {
+    const { password, ...userData } = createUserDto;
 
+    const userExists = await this.userRepository.findOne({
+      where: { email: userData.email },
+    });
+    if (userExists) throw new BadRequestException('User already exists');
+
+    try {
       const user = this.userRepository.create({
         ...userData,
         password: await this.hashData(password),
+      });
+
+      this.mailService.sendMail({
+        recipientEmail: user.email,
+        subject: 'Welcome to our platform',
+        textPart: 'Welcome to our platform',
+        htmlPart: '<h1>Welcome to our platform</h1>',
       });
 
       await this.userRepository.save(user);
@@ -129,9 +144,8 @@ export class AuthService {
   }
 
   private handleDBErrors(error: any): never {
-    if (error.code === '23505') throw new BadRequestException(error.detail);
-
     console.log(error);
+    if (error.code === '23505') throw new BadRequestException(error.detail);
 
     throw new InternalServerErrorException('Please check server logs');
   }
