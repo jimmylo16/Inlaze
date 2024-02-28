@@ -5,7 +5,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 config();
 
 export const dbConfig: TypeOrmModuleOptions = {
-  type: 'mysql',
+  type: 'postgres',
   host: process.env.DB_HOST,
   port: +process.env.DB_PORT,
   database: process.env.DB_NAME,
@@ -15,6 +15,7 @@ export const dbConfig: TypeOrmModuleOptions = {
   synchronize: false,
   // logging: true,
 };
+console.log(dbConfig);
 export const dataSourceOptions = {
   ...dbConfig,
   entities: ['dist/src/modules/**/entities/*.entity{.ts,.js}'],
