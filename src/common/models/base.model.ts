@@ -1,5 +1,5 @@
 export class BaseModel {
   readonly createdAt: Date;
   readonly updatedAt: Date;
-  readonly deletedAt: Date;
+  readonly deletedAt?: Date;
 }

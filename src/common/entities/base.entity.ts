@@ -8,6 +8,6 @@ export class BaseEntity implements BaseModel {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ type: 'date' })
-  deletedAt: Date;
+  @Column({ type: 'date', default: null, nullable: true })
+  deletedAt?: Date;
 }
