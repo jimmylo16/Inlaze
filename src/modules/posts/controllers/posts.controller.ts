@@ -21,11 +21,11 @@ import { User } from 'src/modules/users/entities/user.entity';
 
 @Controller('posts')
 @ApiTags('Posts')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createPostDto: CreatePostDto, @Req() req: Request) {
     const user = (req as any).user as User;
@@ -43,6 +43,8 @@ export class PostsController {
     return this.postsService.findOne(id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -51,6 +53,8 @@ export class PostsController {
     return this.postsService.update(id, updatePostDto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.postsService.remove(id);

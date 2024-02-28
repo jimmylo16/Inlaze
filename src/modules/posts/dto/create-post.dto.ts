@@ -12,7 +12,7 @@ export class CreatePostDto {
 
   @IsNumber()
   @IsOptional()
-  readonly likes: number;
+  readonly likes?: number;
 
   @IsString()
   @IsOptional()
