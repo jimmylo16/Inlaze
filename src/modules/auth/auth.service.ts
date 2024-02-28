@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
@@ -13,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginUserDto, CreateUserDto } from './dto';
 import { User } from '../users/entities/user.entity';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
 
     private readonly jwtService: JwtService,
+
+    private configService: ConfigService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -29,15 +33,18 @@ export class AuthService {
 
       const user = this.userRepository.create({
         ...userData,
-        password: bcrypt.hashSync(password, 10),
+        password: await this.hashData(password),
       });
 
       await this.userRepository.save(user);
       delete user.password;
 
+      const tokens = await this.getJwtToken({ id: user.id });
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+
       return {
         ...user,
-        token: this.getJwtToken({ id: user.id }),
+        token: tokens.accessToken,
       };
     } catch (error) {
       this.handleDBErrors(error);
@@ -58,22 +65,67 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Credentials are not valid (password)');
 
+    const tokens = await this.getJwtToken({ id: user.id });
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
     return {
       ...user,
-      token: this.getJwtToken({ id: user.id }),
+      token: tokens.accessToken,
     };
   }
 
-  async checkAuthStatus(user: User) {
-    return {
-      ...user,
-      token: this.getJwtToken({ id: user.id }),
-    };
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user || !user.refreshToken)
+      throw new ForbiddenException('Access Denied');
+
+    const refreshTokenMatches = bcrypt.compare(user.refreshToken, refreshToken);
+    if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
+
+    const tokens = await this.getJwtToken({ id: user.id });
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
   }
 
-  private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-    return token;
+  async logout(userId: string) {
+    return this.userRepository.update(userId, { refreshToken: null });
+  }
+
+  private async getJwtToken(payload: JwtPayload) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          payload,
+        },
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          payload,
+        },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+    const hashedRefreshToken = await this.hashData(refreshToken);
+    await this.userRepository.update(userId, {
+      refreshToken: hashedRefreshToken,
+    });
+  }
+
+  async hashData(data: string) {
+    return bcrypt.hashSync(data, 10);
   }
 
   private handleDBErrors(error: any): never {

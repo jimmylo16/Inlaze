@@ -7,5 +7,6 @@ export class UserModel extends BaseModel {
   readonly age: number;
   readonly email: string;
   readonly password: string;
+  readonly refreshToken?: string;
   readonly posts: PostModel[];
 }

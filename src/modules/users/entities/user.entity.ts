@@ -30,6 +30,9 @@ export class User extends BaseEntity implements UserModel {
   @ApiProperty()
   password: string;
 
+  @Column('text', { nullable: true })
+  readonly refreshToken?: string;
+
   @OneToMany(() => Post, (post) => post.user)
   @ApiProperty({ type: () => Post })
   readonly posts: Post[];

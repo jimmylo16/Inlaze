@@ -6,12 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '../services/posts.service';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('posts')
+@ApiTags('Posts')
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
